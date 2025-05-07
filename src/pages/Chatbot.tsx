@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mic, Send, Loader2, Volume2, User } from 'lucide-react';
+import { Mic, Send, Loader2, Volume2, User, MessageSquare, ChevronRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useApi } from '@/contexts/ApiContext';
 import { cn } from '@/lib/utils';
@@ -226,6 +225,20 @@ const Chatbot = () => {
     }
   };
 
+  const quickQueries = [
+    { text: "How many open jobs do we have?", icon: <MessageSquare className="h-4 w-4" /> },
+    { text: "Show me candidate statistics", icon: <MessageSquare className="h-4 w-4" /> },
+    { text: "When are the next interviews scheduled?", icon: <MessageSquare className="h-4 w-4" /> },
+    { text: "What's our conversion rate from interview to offer?", icon: <MessageSquare className="h-4 w-4" /> }
+  ];
+
+  const voiceCommands = [
+    "How many candidates are in the pipeline?",
+    "Show me today's interviews",
+    "What's our most popular job posting?",
+    "Give me insights on the UX Designer role"
+  ];
+
   return (
     <div className="flex flex-col h-[calc(100vh-9rem)] animate-fade-in">
       <div className="flex-1">
@@ -344,53 +357,46 @@ const Chatbot = () => {
           
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Quick Queries</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2 text-brand-500" />
+                  Quick Queries
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left" 
-                  onClick={() => setInput("How many open jobs do we have?")}
-                >
-                  How many open jobs do we have?
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left" 
-                  onClick={() => setInput("Show me candidate statistics")}
-                >
-                  Show me candidate statistics
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left" 
-                  onClick={() => setInput("When are the next interviews scheduled?")}
-                >
-                  When are the next interviews scheduled?
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left" 
-                  onClick={() => setInput("What's our conversion rate from interview to offer?")}
-                >
-                  What's our conversion rate from interview to offer?
-                </Button>
+              <CardContent className="space-y-2 pt-0">
+                {quickQueries.map((query, index) => (
+                  <Button 
+                    key={index}
+                    variant="ghost" 
+                    className="w-full justify-between text-left hover:bg-brand-50 group transition-colors"
+                    onClick={() => setInput(query.text)}
+                  >
+                    <div className="flex items-center">
+                      {query.icon}
+                      <span className="ml-2">{query.text}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-500 transition-colors" />
+                  </Button>
+                ))}
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle>Voice Commands</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <Mic className="h-5 w-5 mr-2 text-brand-500" />
+                  Voice Commands
+                </CardTitle>
                 <CardDescription>
                   Click the microphone button and try saying:
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>"How many candidates are in the pipeline?"</p>
-                <p>"Show me today's interviews"</p>
-                <p>"What's our most popular job posting?"</p>
-                <p>"Give me insights on the UX Designer role"</p>
+              <CardContent className="space-y-3 pt-0">
+                {voiceCommands.map((command, index) => (
+                  <div key={index} className="p-2 rounded-md bg-muted/50 border border-border/50">
+                    <p className="text-sm font-medium">"{command}"</p>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
