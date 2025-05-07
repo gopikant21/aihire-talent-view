@@ -48,7 +48,7 @@ const Insights = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="w-full px-4 py-6 space-y-8 mx-auto max-w-7xl animate-in fade-in duration-500">
+    <div className="w-full px-4 mx-auto max-w-7xl animate-in fade-in duration-500">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Recruitment Insights</h2>
         <p className="text-muted-foreground">

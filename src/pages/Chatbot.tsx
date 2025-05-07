@@ -18,10 +18,13 @@ import {
   User,
   MessageSquare,
   ChevronRight,
+  StopCircle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useApi } from "@/contexts/ApiContext";
 import { cn } from "@/lib/utils";
+
+// Define API base URL
+const API_BASE_URL = "http://localhost:2900";
 
 interface Message {
   id: string;
@@ -46,10 +49,13 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
   const { toast } = useToast();
-  const { textToSpeech } = useApi();
 
   useEffect(() => {
     scrollToBottom();
@@ -57,6 +63,84 @@ const Chatbot = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Text-to-Speech function that uses the backend API
+  const textToSpeech = async (text: string): Promise<string> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to convert text to speech");
+      }
+
+      const data = await response.json();
+      return data.audio_url;
+    } catch (error) {
+      console.error("Error in TTS:", error);
+      throw error;
+    }
+  };
+
+  // Speech-to-Text function that uses the backend API
+  const speechToText = async (audioBlob: Blob): Promise<string> => {
+    try {
+      // Create a unique ID for this STT request
+      const id = Date.now().toString();
+
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "audio.wav");
+
+      const response = await fetch(`${API_BASE_URL}/api/stt/${id}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to convert speech to text");
+      }
+
+      const data = await response.json();
+      return data.transcript;
+    } catch (error) {
+      console.error("Error in STT:", error);
+      throw error;
+    }
+  };
+
+  // WebSocket STT connection for real-time transcription
+  const setupWebSocketSTT = () => {
+    const id = Date.now().toString();
+    const ws = new WebSocket(`ws://localhost:2900/ws/stt/${id}`);
+
+    ws.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.transcript) {
+        console.log("Received transcript:", data.transcript);
+        // Use partial transcription for UI feedback
+        setInput(data.transcript);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    return ws;
   };
 
   const handleSend = async () => {
@@ -93,7 +177,7 @@ const Chatbot = () => {
           "I can help you with information about job postings, candidates in your pipeline, or recruitment analytics. What would you like to know?";
       }
 
-      // Generate audio from response text
+      // Generate audio from response text using the TTS API
       let audioUrl = "";
       try {
         audioUrl = await textToSpeech(response);
@@ -177,17 +261,55 @@ const Chatbot = () => {
 
   const startRecording = async () => {
     try {
-      // In a real implementation, we would access the microphone and start recording
+      // Request microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Create a MediaRecorder instance
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      // Set up WebSocket for real-time STT (optional)
+      const ws = setupWebSocketSTT();
+      wsRef.current = ws;
+
+      // Collect audio chunks
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+
+          // Send audio chunk to WebSocket for real-time transcription
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(event.data);
+          }
+        }
+      };
+
+      // Handle recording completion
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/wav",
+        });
+        setAudioBlob(audioBlob);
+
+        // Close WebSocket connection
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+        }
+
+        // Process the complete recording
+        await processRecording(audioBlob);
+      };
+
+      // Start recording
+      mediaRecorder.start(100); // Send data every 100ms for real-time processing
       setIsRecording(true);
+
       toast({
         title: "Recording started",
         description: "Listening for your voice input...",
       });
-
-      // Simulate recording for 3 seconds
-      setTimeout(() => {
-        stopRecording();
-      }, 3000);
     } catch (error) {
       console.error("Error starting recording:", error);
       setIsRecording(false);
@@ -199,44 +321,84 @@ const Chatbot = () => {
     }
   };
 
-  const stopRecording = async () => {
-    // In a real implementation, this would stop recording and send the audio to the API
-    setIsRecording(false);
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
 
-    // Simulate processing the audio
+      // Stop all tracks in the stream
+      if (mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream
+          .getTracks()
+          .forEach((track) => track.stop());
+      }
+    }
+  };
+
+  const processRecording = async (audioBlob: Blob) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Simulate a transcribed message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: "How many candidates are in the pipeline?",
-      sender: "user",
-      timestamp: new Date(),
-    };
+    try {
+      // Use the STT API to transcribe the audio
+      const transcript = await speechToText(audioBlob);
 
-    setMessages((prev) => [...prev, userMessage]);
+      // Add user message with the transcript
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: transcript,
+        sender: "user",
+        timestamp: new Date(),
+      };
 
-    // Simulate AI response
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      setMessages((prev) => [...prev, userMessage]);
 
-    // For demo purposes, simulate an AI response
-    const response =
-      "We have 342 candidates in our pipeline right now. 158 have applied, 84 are in screening, 42 are in the interview stage, and 16 have received offers.";
+      // Process the transcript to generate an AI response (reuse the handleSend logic)
+      // Simulate AI response delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Simulate generating audio URL
-    const audioUrl = ""; // In a real app, this would be from the API
+      // Generate a response based on the transcript
+      let response = "";
+      if (transcript.toLowerCase().includes("job")) {
+        response =
+          "We currently have 12 open positions. Our most active job is for Senior Software Engineer with 42 applicants so far. Would you like me to list more open positions?";
+      } else if (transcript.toLowerCase().includes("candidate")) {
+        response =
+          "We have 342 candidates in our pipeline right now. 158 have applied, 84 are in screening, 42 are in the interview stage, and 16 have received offers.";
+      } else if (transcript.toLowerCase().includes("interview")) {
+        response =
+          "There are 28 interviews scheduled this week, with 12 interviews scheduled for today. Would you like me to provide details about any specific candidate?";
+      } else {
+        response =
+          "I can help you with information about job postings, candidates in your pipeline, or recruitment analytics. What would you like to know?";
+      }
 
-    const aiMessage: Message = {
-      id: Date.now().toString(),
-      content: response,
-      sender: "ai",
-      timestamp: new Date(),
-      audioUrl: audioUrl,
-    };
+      // Generate audio from response text using the TTS API
+      let audioUrl = "";
+      try {
+        audioUrl = await textToSpeech(response);
+      } catch (error) {
+        console.error("Failed to convert text to speech:", error);
+      }
 
-    setMessages((prev) => [...prev, aiMessage]);
-    setIsLoading(false);
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        content: response,
+        sender: "ai",
+        timestamp: new Date(),
+        audioUrl: audioUrl,
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error processing recording:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process voice input",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
