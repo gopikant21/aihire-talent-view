@@ -1,73 +1,123 @@
-# Welcome to your Lovable project
+# AIHire Talent View
 
-## Project info
+A modern talent management platform for recruiters to manage candidates and job positions effectively.
 
-**URL**: https://lovable.dev/projects/0708d399-7b42-44e2-9a63-d79424bc75d9
+## 🚀 Features
 
-## How can I edit this code?
+- **Candidate Management**: Track and manage candidate profiles and applications
+- **Job Management**: Create, edit, and manage job listings
+- **Dashboard**: Get an overview of your recruitment process
+- **Insights**: Data-driven recruitment analytics
+- **Chatbot**: AI-powered assistance for recruitment queries
 
-There are several ways of editing your application.
+## 💻 Tech Stack
 
-**Use Lovable**
+- **Framework**: React 18
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **UI Components**: Shadcn UI (based on Radix UI)
+- **Styling**: Tailwind CSS
+- **Routing**: React Router DOM
+- **Form Handling**: React Hook Form with Zod validation
+- **Data Fetching**: TanStack React Query
+- **Charts**: Recharts
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0708d399-7b42-44e2-9a63-d79424bc75d9) and start prompting.
+## 🛠️ Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16 or higher)
+- npm or yarn or bun
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+git clone https://github.com/gopikant21/aihire-talent-view.git
+cd aihire-talent-view
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm install
+# or
+yarn install
+# or
+bun install
+```
 
-**Use GitHub Codespaces**
+3. Start the development server
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+bun dev
+```
 
-## What technologies are used for this project?
+4. Open your browser and navigate to `http://localhost:5173`
 
-This project is built with:
+## 📦 Build
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+npm run build
+# or
+yarn build
+# or
+bun build
+```
 
-## How can I deploy this project?
+To preview the build:
 
-Simply open [Lovable](https://lovable.dev/projects/0708d399-7b42-44e2-9a63-d79424bc75d9) and click on Share -> Publish.
+```bash
+npm run preview
+# or
+yarn preview
+# or
+bun preview
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 🧪 Linting
 
-Yes, you can!
+```bash
+npm run lint
+# or
+yarn lint
+# or
+bun lint
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📁 Project Structure
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
+aihire-talent-view/
+├── public/              # Static assets
+├── src/
+│   ├── components/      # Reusable components
+│   │   ├── candidates/  # Candidate-related components
+│   │   ├── jobs/        # Job-related components
+│   │   ├── layout/      # Layout components
+│   │   └── ui/          # UI components (from shadcn/ui)
+│   ├── contexts/        # React contexts
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions
+│   ├── pages/           # Application pages
+│   ├── App.tsx          # Main App component
+│   └── main.tsx         # Application entry point
+└── ...config files      # Various configuration files
+```
+
+## 🔑 Environment Variables
+
+Create a `.env` file in the root directory and add the following variables:
+
+```
+VITE_API_URL=your_api_url_here
+```
+
+## 📄 License
+
+[MIT](LICENSE)
