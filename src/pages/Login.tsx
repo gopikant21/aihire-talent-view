@@ -35,7 +35,7 @@ const Login = () => {
         <div className="h-10 w-10 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold">
           AI
         </div>
-        <h1 className="text-2xl font-bold">AIHire</h1>
+        <h1 className="text-2xl font-bold">Dokkaabi</h1>
       </div>
       
       <Card className={cn("w-full max-w-md shadow-lg", isLoading && "opacity-80")}>
