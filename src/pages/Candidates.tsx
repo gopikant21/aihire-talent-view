@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import CandidateDetail from '@/components/candidates/CandidateDetail';
 
 type Stage = 'applied' | 'screening' | 'interview' | 'offer';
 
@@ -140,7 +141,15 @@ const getStageBadgeVariant = (stage: Stage) => {
   }
 };
 
-const CandidateCard = ({ candidate }: { candidate: Candidate }) => (
+const CandidateCard = ({ 
+  candidate, 
+  onViewProfile, 
+  onReview 
+}: { 
+  candidate: Candidate; 
+  onViewProfile: (candidate: Candidate) => void; 
+  onReview: (candidate: Candidate) => void; 
+}) => (
   <Card>
     <CardHeader className="flex flex-row items-start justify-between pb-2">
       <div className="flex items-center space-x-4">
@@ -163,8 +172,12 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => (
         <p>Applied on: {candidate.appliedDate}</p>
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="outline" size="sm">View Profile</Button>
-        <Button size="sm">Review</Button>
+        <Button variant="outline" size="sm" onClick={() => onViewProfile(candidate)}>
+          View Profile
+        </Button>
+        <Button size="sm" onClick={() => onReview(candidate)}>
+          Review
+        </Button>
       </div>
     </CardContent>
   </Card>
@@ -172,11 +185,23 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => (
 
 const Candidates = () => {
   const [currentStage, setCurrentStage] = useState<Stage | 'all'>('all');
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const filteredCandidates = MOCK_CANDIDATES.filter(candidate => {
     if (currentStage === 'all') return true;
     return candidate.stage === currentStage;
   });
+
+  const handleViewProfile = (candidate: Candidate) => {
+    setSelectedCandidate(candidate);
+    setIsDetailOpen(true);
+  };
+
+  const handleReview = (candidate: Candidate) => {
+    // For now, just view the profile when Review is clicked
+    handleViewProfile(candidate);
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -203,7 +228,12 @@ const Candidates = () => {
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCandidates.map(candidate => (
-              <CandidateCard key={candidate.id} candidate={candidate} />
+              <CandidateCard 
+                key={candidate.id} 
+                candidate={candidate} 
+                onViewProfile={handleViewProfile}
+                onReview={handleReview}
+              />
             ))}
           </div>
         </TabsContent>
@@ -212,12 +242,23 @@ const Candidates = () => {
           <TabsContent key={stage.value} value={stage.value} className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredCandidates.map(candidate => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
+                <CandidateCard 
+                  key={candidate.id} 
+                  candidate={candidate} 
+                  onViewProfile={handleViewProfile}
+                  onReview={handleReview}
+                />
               ))}
             </div>
           </TabsContent>
         ))}
       </Tabs>
+
+      <CandidateDetail
+        candidate={selectedCandidate}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </div>
   );
 };
