@@ -42,7 +42,7 @@ const Sidebar = () => {
           <div className="h-8 w-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold">
             AI
           </div>
-          <h1 className="text-xl font-bold">AIHire</h1>
+          <h1 className="text-xl font-bold">Dokkaabi</h1>
         </div>
       </div>
       
