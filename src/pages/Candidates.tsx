@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import CandidateDetail from '@/components/candidates/CandidateDetail';
+import AddCandidateDialog from '@/components/candidates/AddCandidateDialog';
 
 type Stage = 'applied' | 'screening' | 'interview' | 'offer';
 
@@ -187,20 +188,29 @@ const Candidates = () => {
   const [currentStage, setCurrentStage] = useState<Stage | 'all'>('all');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailMode, setDetailMode] = useState<'profile' | 'review'>('profile');
+  const [isAddCandidateOpen, setIsAddCandidateOpen] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>(MOCK_CANDIDATES);
   
-  const filteredCandidates = MOCK_CANDIDATES.filter(candidate => {
+  const filteredCandidates = candidates.filter(candidate => {
     if (currentStage === 'all') return true;
     return candidate.stage === currentStage;
   });
 
   const handleViewProfile = (candidate: Candidate) => {
     setSelectedCandidate(candidate);
+    setDetailMode('profile');
     setIsDetailOpen(true);
   };
 
   const handleReview = (candidate: Candidate) => {
-    // For now, just view the profile when Review is clicked
-    handleViewProfile(candidate);
+    setSelectedCandidate(candidate);
+    setDetailMode('review');
+    setIsDetailOpen(true);
+  };
+  
+  const handleAddCandidate = (newCandidate: Candidate) => {
+    setCandidates(prev => [newCandidate, ...prev]);
   };
 
   return (
@@ -215,14 +225,19 @@ const Candidates = () => {
       <Tabs defaultValue="all" onValueChange={(value) => setCurrentStage(value as Stage | 'all')}>
         <div className="flex justify-between items-center">
           <TabsList className="grid grid-cols-5 w-fit">
-            <TabsTrigger value="all">All ({MOCK_CANDIDATES.length})</TabsTrigger>
+            <TabsTrigger value="all">All ({candidates.length})</TabsTrigger>
             {stages.map(stage => (
               <TabsTrigger key={stage.value} value={stage.value}>
                 {stage.label} ({stage.count})
               </TabsTrigger>
             ))}
           </TabsList>
-          <Button className="bg-brand-500 hover:bg-brand-600">Add Candidate</Button>
+          <Button 
+            className="bg-brand-500 hover:bg-brand-600" 
+            onClick={() => setIsAddCandidateOpen(true)}
+          >
+            Add Candidate
+          </Button>
         </div>
         
         <TabsContent value="all" className="mt-6">
@@ -256,8 +271,15 @@ const Candidates = () => {
 
       <CandidateDetail
         candidate={selectedCandidate}
+        mode={detailMode}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
+      />
+      
+      <AddCandidateDialog
+        isOpen={isAddCandidateOpen}
+        onClose={() => setIsAddCandidateOpen(false)}
+        onAddCandidate={handleAddCandidate}
       />
     </div>
   );

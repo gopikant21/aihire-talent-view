@@ -108,7 +108,15 @@ const MOCK_JOBS: Job[] = [
   },
 ];
 
-const JobCard = ({ job, onViewDetails }: { job: Job; onViewDetails: (job: Job) => void }) => {
+const JobCard = ({ 
+  job, 
+  onViewDetails, 
+  onViewCandidates 
+}: { 
+  job: Job; 
+  onViewDetails: (job: Job) => void;
+  onViewCandidates: (job: Job) => void;
+}) => {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -144,7 +152,7 @@ const JobCard = ({ job, onViewDetails }: { job: Job; onViewDetails: (job: Job) =
         <Button variant="outline" onClick={() => onViewDetails(job)}>View Details</Button>
         <Button 
           disabled={job.status === 'closed'}
-          onClick={() => onViewDetails(job)}
+          onClick={() => onViewCandidates(job)}
         >
           {job.status === 'open' ? 'View Candidates' : 'Job Closed'}
         </Button>
@@ -157,6 +165,7 @@ const Jobs = () => {
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailMode, setDetailMode] = useState<'details' | 'candidates'>('details');
   
   const filteredJobs = MOCK_JOBS.filter(job => {
     if (filter === 'all') return true;
@@ -165,6 +174,13 @@ const Jobs = () => {
   
   const handleViewDetails = (job: Job) => {
     setSelectedJob(job);
+    setDetailMode('details');
+    setIsDetailOpen(true);
+  };
+  
+  const handleViewCandidates = (job: Job) => {
+    setSelectedJob(job);
+    setDetailMode('candidates');
     setIsDetailOpen(true);
   };
 
@@ -207,12 +223,18 @@ const Jobs = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredJobs.map((job) => (
-          <JobCard key={job.id} job={job} onViewDetails={handleViewDetails} />
+          <JobCard 
+            key={job.id} 
+            job={job} 
+            onViewDetails={handleViewDetails}
+            onViewCandidates={handleViewCandidates}
+          />
         ))}
       </div>
 
       <JobDetail 
         job={selectedJob}
+        mode={detailMode}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
       />
