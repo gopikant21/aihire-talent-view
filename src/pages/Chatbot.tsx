@@ -22,8 +22,9 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { useApi } from "@/contexts/ApiContext";
 
-// Define API base URL
+// Define API base URL for WebSocket connections
 const API_BASE_URL = "http://localhost:2900";
 
 interface Message {
@@ -56,6 +57,7 @@ const Chatbot = () => {
   const audioChunksRef = useRef<BlobPart[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const { toast } = useToast();
+  const { textToSpeech, speechToText } = useApi();
 
   useEffect(() => {
     scrollToBottom();
@@ -63,55 +65,6 @@ const Chatbot = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Text-to-Speech function that uses the backend API
-  const textToSpeech = async (text: string): Promise<string> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/tts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to convert text to speech");
-      }
-
-      const data = await response.json();
-      return data.audio_url;
-    } catch (error) {
-      console.error("Error in TTS:", error);
-      throw error;
-    }
-  };
-
-  // Speech-to-Text function that uses the backend API
-  const speechToText = async (audioBlob: Blob): Promise<string> => {
-    try {
-      // Create a unique ID for this STT request
-      const id = Date.now().toString();
-
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "audio.wav");
-
-      const response = await fetch(`${API_BASE_URL}/api/stt/${id}`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to convert speech to text");
-      }
-
-      const data = await response.json();
-      return data.transcript;
-    } catch (error) {
-      console.error("Error in STT:", error);
-      throw error;
-    }
   };
 
   // WebSocket STT connection for real-time transcription
